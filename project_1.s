@@ -1,6 +1,6 @@
 .globl main
 .globl string
-#.globl convert
+.globl convert
 #.globl mean
 #.globl median
 .globl disString
@@ -94,10 +94,9 @@ disString:
 		or $0, $0, $0			#Delay Slot(branch)
 
 convert:
-		lb $t1, ($s0)			#Load s0
-		addi $s0, $s0, 1
-		lb $t2, ($s0)
-		and $t1, $t1, $t2
+		#lh $t1, ($s0)			#Load s0
+		#or $0, $0, $0			#Delay Slot(branch)
+		addi $t1, $0, 33
 
 		addi $v0, $0, 1			#print integer
 		add $a0, $0, $t1		
