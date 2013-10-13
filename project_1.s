@@ -54,7 +54,8 @@ main:
 		add $t0, $0, $v0		#add v0 to t0
 
 		beq $t0, 1,string		#branch to string
-		beq $t0, 2, disString
+		beq $t0, 2, disString	#branch to disString
+		beq $t0, 3, convert		#branch to convert
 		beq $t0, 7, exitProgram	#branch to exit
 
 		addi $v0, $0, 4			#print main_menu_prompt
@@ -93,7 +94,16 @@ disString:
 		or $0, $0, $0			#Delay Slot(branch)
 
 convert:
-		l $t0, 0($s0)			#Load s0
+		lb $t1, ($s0)			#Load s0
+		addi $s0, $s0, 1
+		lb $t2, ($s0)
+		and $t1, $t1, $t2
+
+		addi $v0, $0, 1			#print integer
+		add $a0, $0, $t1		
+		syscall
+		j main					#Return to Main
+		or $0, $0, $0			#Delay Slot(branch)
 
 exitProgram:
 		addi $v0, $0, 4			#print exit_prompt
