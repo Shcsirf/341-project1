@@ -54,9 +54,13 @@ main:
 		add $t0, $0, $v0		#add v0 to t0
 
 		beq $t0, 1,string		#branch to string
+		or $0, $0, $0			#Delay Slot(branch)
 		beq $t0, 2, disString	#branch to disString
+		or $0, $0, $0			#Delay Slot(branch)
 		beq $t0, 3, convert		#branch to convert
+		or $0, $0, $0			#Delay Slot(branch)
 		beq $t0, 7, exitProgram	#branch to exit
+		or $0, $0, $0			#Delay Slot(branch)
 
 		addi $v0, $0, 4			#print main_menu_prompt
 		lui $a0, 0x1000			#load data array
@@ -77,7 +81,8 @@ string:
 		addi $a1, $0, 100		#sets max string length
 		add $s0, $0, $a0		#add input_string to s0
 		syscall
-
+		add $s1, $0, $s0		#copies s0 into s1
+		add $t2, $0, $0			#initialize t2 to be used in convert
 
 		j main					#Return to Main
 		or $0, $0, $0			#Delay Slot(branch)
@@ -87,19 +92,60 @@ disString:
 		lui $a0, 0x1000			#load data array
 		addi $a0, $a0, 357		#prompt location in the array
 		syscall
+
 		addi $v0, $0, 4			#print input_string
 		add $a0, $0, $s0		#add input_string to a0
 		syscall
+
 		j main					#Return to Main
 		or $0, $0, $0			#Delay Slot(branch)
 
 convert:
-		#lh $t1, ($s0)			#Load s0
-		#or $0, $0, $0			#Delay Slot(branch)
-		addi $t1, $0, 33
+		lb $t1, ($s1)			#Load s1
+		or $0, $0, $0			#Delay Slot(load)
 
+		beq $t1, 10, comma		#branch if null
+		or $0, $0, $0			#Delay Slot(branch)
+
+		beq $t1, 44, comma		#branch if comma
+		or $0, $0, $0			#Delay Slot(branch)
+
+		addi $t1, $t1, -48
+		beq $t4, 1, sec		
+		or $0, $0, $0			#Delay Slot(branch)
+		add $t2, $0, $t1
+		addi $t4, $0, 1			#Counter
+
+		addi $s1, $s1, 1		#moving array spot by 1
+
+		j convert
+		or $0, $0, $0			#Delay Slot(branch)
+
+sec:
+		add $t3, $0, $t2
+		sll $t2, $t2, 3			#muliply by 10
+		add $t2, $t2, $t3
+		add $t2, $t2, $t3
+
+		add $t2, $t2, $t1		#add second integer
+		addi $s1, $s1, 1		#moving array spot by 1
+
+		j convert
+		or $0, $0, $0			#Delay Slot(branch)
+
+comma:
+		addi $t5, $0, 1			#element counter
+		lui 
+		beq $t1, 10, finCon		#branch to end
+		or $0, $0, $0			#Delay Slot(branch)
+
+		addi $t4, $t4, -1		#reduce counter
+		j convert
+		or $0, $0, $0			#Delay Slot(branch)
+
+finCon:
 		addi $v0, $0, 1			#print integer
-		add $a0, $0, $t1		
+		add $a0, $0, $t2		
 		syscall
 		j main					#Return to Main
 		or $0, $0, $0			#Delay Slot(branch)
