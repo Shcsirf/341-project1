@@ -183,9 +183,8 @@ less:
 		sh $t9, ($t6)			#store the last element in the next spot
 		addi $t6, $t6, -2		#move next spot back one
 		addi $s2, $s2, -2		#move last spot back one
-		lh $t9, ($s2)			#value in last spot
-		or $0, $0, $0			#Delay Slot(branch)
-		beq $t9, $t5, great		#branch if counter spot is reached
+		addi $t9, $s0, 100
+		beq $t9, $s2, great		#branch if counter spot is reached
 		or $0, $0, $0			#Delay Slot(branch)
 
 		j loop
@@ -219,6 +218,7 @@ last_dup:
 checked:
 		addi $t5, $t5, 1		#element counter
 		sh $t5, 100($s0)		#store element count in first integer_array spot
+		add $t4, $0, $0
 
 duplicate:
 		bne $t4, 0, dup_less
