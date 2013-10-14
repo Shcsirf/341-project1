@@ -1,9 +1,8 @@
 .globl main
-.globl comma
 .globl string
 .globl convert
-#.globl mean
-#.globl median
+.globl mean
+.globl median
 .globl disString
 .globl disArray
 .globl exitProgram
@@ -40,6 +39,12 @@ display_array:
 newline_char:
 	.asciiz "\n"
 		#starts at 527, end at 528
+element_count:
+	.asciiz "Number of Elements: "
+		#starts at 529, end at 549
+no_string:
+	.asciiz "Please enter a string first\n"
+		#starts at 549, end at 577
 .text
 
 main:
@@ -91,6 +96,7 @@ string:
 		addi $a1, $0, 100		#sets max string length
 		add $s0, $0, $a0		#add input_string to s0
 		syscall
+		addi $s5, $0, 1			#string counter
 		add $s1, $0, $s0		#copies s0 into s1 used in convert
 		add $t5, $0, $0			#initialize t5
 		add $t8, $0, $0			#initialize t8
@@ -99,6 +105,18 @@ string:
 		or $0, $0, $0			#Delay Slot(branch)
 
 disString:
+		beq $s5, 1, string_exists
+		or $0, $0, $0			#Delay Slot(branch)
+
+		addi $v0, $0, 4			#print display_string_prompt
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 550		#prompt location in the array
+		syscall
+
+		j main
+		or $0, $0, $0
+
+string_exists:
 		addi $v0, $0, 4			#print display_string_prompt
 		lui $a0, 0x1000			#load data array
 		addi $a0, $a0, 257		#prompt location in the array
@@ -112,9 +130,30 @@ disString:
 		or $0, $0, $0			#Delay Slot(branch)
 
 convert:
+		beq $s5, 1, can_convert
+		or $0, $0, $0			#Delay Slot(branch)
+
+		addi $v0, $0, 4			#print display_string_prompt
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 550		#prompt location in the array
+		syscall
+
+		j main
+		or $0, $0, $0
+
+can_convert:
 		lb $t1, ($s1)			#Load s1
 		or $0, $0, $0			#Delay Slot(load)
 
+		bne $t1, 45, not_neg
+		or $0, $0, $0			#Delay Slot(branch)
+		addi $s4, $0, 1			#neg counter
+		addi $s1, $s1, 1		#moving array spot by 1
+
+		j convert
+		or $0, $0, $0			#Delay Slot(branch)
+
+not_neg:
 		beq $t1, 10, comma		#branch if null
 		or $0, $0, $0			#Delay Slot(branch)
 
@@ -144,7 +183,12 @@ next:
 		j convert
 		or $0, $0, $0			#Delay Slot(branch)
 
+neg:
+		sub $t2, $0, $t2
+		addi $s4, $s4, 1
+
 comma:
+		beq $s4, 1, neg			#negative number
 		add $t4, $0, $0			#clear counter
 		lui $s2, 0x1000
 		or $0, $0, $0			#Delay Slot(branch)
@@ -268,6 +312,11 @@ disArray:
 		lui $a0, 0x1000			#load data array
 		addi $a0, $a0, 507		#prompt location in the array
 		syscall
+		addi $v0, $0, 4			#print prompt
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 529		#prompt location in the array
+		syscall
+
 		addi $t2, $s3, 1
 
 print:
@@ -289,6 +338,26 @@ print:
 
 		j main					#Return to Main
 		or $0, $0, $0			#Delay Slot(branch)
+
+mean:
+		add $t4, $0, $0			$clear register
+		lui $t1, 0x1000			#load data
+		or $0, $0, $0			#Delay Slot(load)
+		addi $t1, $t1, 102		#point to convert_array
+		lh $t2, 100($s0)		#number of converted elements
+		or $0, $0, $0			#Delay Slot(load)
+sum:
+		lh $t3, ($t1)			#load element
+		or $0, $0, $0			#Delay Slot(load)
+		add $t4, $t4, $t3		#add element to sum
+		addi $t1, $t1, 2		#increment pointer
+		addi $t2, $t2, -1		#decrement number of elements
+		bne $t2, $0, sum		#loop to sum
+		or $0, $0, $0			#Delay Slot(load)
+		lh $t2, 100($s0)		#number of converted elements
+		or $0, $0, $0			#Delay Slot(load)
+div:
+		
 
 exitProgram:
 		addi $v0, $0, 4			#print exit_prompt
