@@ -1,4 +1,5 @@
 .globl main
+.globl comma
 .globl string
 .globl convert
 #.globl mean
@@ -153,7 +154,7 @@ comma:
 		or $0, $0, $0			#Delay Slot(branch)
 
 loop:
-		lh $t3($s2)
+		lh $t3, ($s2)
 		or $0, $0, $0			#Delay Slot(branch)
 		sub $t7, $t2, $t3		#compare current element and last element
 		beq $t7, $0, equal		#branch if current = last element
@@ -172,10 +173,14 @@ equal:
 		or $0, $0, $0			#Delay Slot(branch)
 
 less:
-		sh $s2, ($t6)			#store the last element in the next spot
+		lh $t9, ($s2)			#value in last spot
+		or $0, $0, $0			#Delay Slot(branch)
+		sh $t9, ($t6)			#store the last element in the next spot
 		addi $t6, $t6, -2		#move next spot back one
 		addi $s2, $s2, -2		#move last spot back one
-		beq $s2, $t5, great		#branch if counter spot is reached
+		lh $t9, ($s2)			#value in last spot
+		or $0, $0, $0			#Delay Slot(branch)
+		beq $t9, $t5, great		#branch if counter spot is reached
 		or $0, $0, $0			#Delay Slot(branch)
 
 		j loop
@@ -203,6 +208,16 @@ finCon:
 		addi $v0, $0, 1			#print integer
 		add $a0, $0, $t2		
 		syscall
+		add $t1, $0, $0			#clear registers
+		add $t2, $0, $0			#clear registers
+		add $t3, $0, $0			#clear registers
+		add $t4, $0, $0			#clear registers
+		add $s3, $0, $t5		#save element counter
+		add $t5, $0, $0			#clear registers
+		add $t6, $0, $0			#clear registers
+		add $t7, $0, $0			#clear registers
+		add $t8, $0, $0			#clear registers
+		add $t9, $0, $0			#clear registers
 		j main					#Return to Main
 		or $0, $0, $0			#Delay Slot(branch)
 
@@ -211,7 +226,7 @@ disArray:
 		lui $a0, 0x1000			#load data array
 		addi $a0, $a0, 567		#prompt location in the array
 		syscall
-		addi $t5, $t5, 1
+		addi $t2, $s3, 1
 
 print:
 		lh $t1, ($s2)
@@ -219,9 +234,9 @@ print:
 		addi $v0, $0, 1			#print integer
 		add $a0, $0, $t1
 		syscall
-		addi $t5, $t5, -1		#decrement counter
+		addi $t2, $t2, -1		#decrement counter
 		addi $s2, $s2, 2		#increment spot in array
-		bne $t5, 0, print		#branch to print
+		bne $t2, 0, print		#branch to print
 		or $0, $0, $0			#Delay Slot(branch)
 
 		j main					#Return to Main
