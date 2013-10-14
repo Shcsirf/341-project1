@@ -8,11 +8,10 @@
 .globl exitProgram
 .data
 string_buffer:
-	.align 2
 	.space 100
 		#start at spot 0, end at spot 99
+.align 1
 input_array:
-	.align 2
 	.space 100
 		#start at spot 100, end at spot 199
 convert_array:
@@ -63,6 +62,8 @@ main:
 		beq $t0, 2, disString	#branch to disString
 		or $0, $0, $0			#Delay Slot(branch)
 		beq $t0, 3, convert		#branch to convert
+		or $0, $0, $0			#Delay Slot(branch)
+		beq $t0, 6, disArray	#branch to disArray
 		or $0, $0, $0			#Delay Slot(branch)
 		beq $t0, 7, exitProgram	#branch to exit
 		or $0, $0, $0			#Delay Slot(branch)
@@ -141,15 +142,20 @@ next:
 
 comma:
 		lui $s2, 0x1000
+		or $0, $0, $0			#Delay Slot(branch)
+
 		addi $s2, $s2, 100		#array spot 100
 		add $s2, $s2, $t5		#last position in integer_array
-		addi $t6, $s2, 1			#next spot in the integer_array
+		add $s2, $s2, $t5
+		addi $t6, $s2, 2			#next spot in the integer_array
 
 		beq $t5, $0, zero		#branch if first element
 		or $0, $0, $0			#Delay Slot(branch)
 
 loop:
-		sub $t7, $t2, $s2		#compare current element and last element
+		lh $t3($s2)
+		or $0, $0, $0			#Delay Slot(branch)
+		sub $t7, $t2, $t3		#compare current element and last element
 		beq $t7, $0, equal		#branch if current = last element
 		or $0, $0, $0			#Delay Slot(branch)
 		bltz $t7, less			#branch if current < last element
@@ -167,8 +173,8 @@ equal:
 
 less:
 		sh $s2, ($t6)			#store the last element in the next spot
-		addi $t6, $t6, -1		#move next spot back one
-		addi $s2, $s2, -1		#move last spot back one
+		addi $t6, $t6, -2		#move next spot back one
+		addi $s2, $s2, -2		#move last spot back one
 		beq $s2, $t5, great		#branch if counter spot is reached
 		or $0, $0, $0			#Delay Slot(branch)
 
@@ -186,6 +192,7 @@ duplicate:
 		or $0, $0, $0			#Delay Slot(branch)
 
 		addi $t4, $t4, -1		#reduce counter
+		addi $s1, $s1, 1		#moving array spot by 1
 		j convert
 		or $0, $0, $0			#Delay Slot(branch)
 
@@ -194,7 +201,7 @@ finCon:
 		addi $s2, $s2, 100		#array spot 100
 
 		addi $v0, $0, 1			#print integer
-		add $a0, $0, $t8		
+		add $a0, $0, $t2		
 		syscall
 		j main					#Return to Main
 		or $0, $0, $0			#Delay Slot(branch)
@@ -204,13 +211,18 @@ disArray:
 		lui $a0, 0x1000			#load data array
 		addi $a0, $a0, 567		#prompt location in the array
 		syscall
-		add $t5, $0, $s2		#number of elements in array
+		addi $t5, $t5, 1
+
 print:
+		lh $t1, ($s2)
+		or $0, $0, $0			#Delay Slot(branch)
 		addi $v0, $0, 1			#print integer
-		add $a0, $0, $s2
+		add $a0, $0, $t1
 		syscall
 		addi $t5, $t5, -1		#decrement counter
+		addi $s2, $s2, 2		#increment spot in array
 		bne $t5, 0, print		#branch to print
+		or $0, $0, $0			#Delay Slot(branch)
 
 		j main					#Return to Main
 		or $0, $0, $0			#Delay Slot(branch)
