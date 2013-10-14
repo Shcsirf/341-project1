@@ -8,9 +8,11 @@
 .globl exitProgram
 .data
 string_buffer:
+	.align 2
 	.space 100
 		#start at spot 0, end at spot 99
-string_array:
+input_array:
+	.align 2
 	.space 100
 		#start at spot 100, end at spot 199
 convert_array:
@@ -138,12 +140,14 @@ next:
 		or $0, $0, $0			#Delay Slot(branch)
 
 comma:
+		lui $s2, 0x1000
+		addi $s2, $s2, 100		#array spot 100
+		add $s2, $s2, $t5		#last position in integer_array
+		addi $t6, $s2, 1			#next spot in the integer_array
+
 		beq $t5, $0, zero		#branch if first element
 		or $0, $0, $0			#Delay Slot(branch)
 
-		addi $s2, $s0, 100		#array spot 100
-		add $s2, $s2, $t5		#last position in integer_array
-		addi $t6, $s2, 1			#next spot in the integer_array
 loop:
 		sub $t7, $t2, $s2		#compare current element and last element
 		beq $t7, $0, equal		#branch if current = last element
@@ -172,7 +176,7 @@ less:
 		or $0, $0, $0			#Delay Slot(branch)
 
 zero:
-		sh $t2, 101($s0)		#store first elememt
+		sh $t2, ($t6)		#store first elememt
 checked:
 		addi $t5, $t5, 1		#element counter
 		sh $t5, 100($s0)		#store element count in first integer_array spot
@@ -186,7 +190,8 @@ duplicate:
 		or $0, $0, $0			#Delay Slot(branch)
 
 finCon:
-		addi $s2, $s0, 100		#array spot 100
+		lui $s2, 0x1000
+		addi $s2, $s2, 100		#array spot 100
 
 		addi $v0, $0, 1			#print integer
 		add $a0, $0, $t8		
