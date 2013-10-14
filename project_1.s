@@ -4,7 +4,7 @@
 #.globl mean
 #.globl median
 .globl disString
-#.globl disArray
+.globl disArray
 .globl exitProgram
 .data
 string_buffer:
@@ -32,6 +32,9 @@ main_menu_prompt:
 exit_prompt:
 	.asciiz "Program is now exiting, Have a Nice Day!\n"
 		#start at spot 525, end at spot 567
+convert_prompt:
+	.asciiz "The following were removed as duplicates:\n"
+		#starts at 567, end at spot 608
 .text
 
 main:
@@ -81,8 +84,9 @@ string:
 		addi $a1, $0, 100		#sets max string length
 		add $s0, $0, $a0		#add input_string to s0
 		syscall
-		add $s1, $0, $s0		#copies s0 into s1
-		add $t2, $0, $0			#initialize t2 to be used in convert
+		add $s1, $0, $s0		#copies s0 into s1 used in convert
+		add $t5, $0, $0			#initialize t5
+		add $t8, $0, $0			#initialize t8
 
 		j main					#Return to Main
 		or $0, $0, $0			#Delay Slot(branch)
@@ -111,7 +115,7 @@ convert:
 		or $0, $0, $0			#Delay Slot(branch)
 
 		addi $t1, $t1, -48
-		beq $t4, 1, sec		
+		beq $t4, 1, next		#branch to next
 		or $0, $0, $0			#Delay Slot(branch)
 		add $t2, $0, $t1
 		addi $t4, $0, 1			#Counter
@@ -121,7 +125,7 @@ convert:
 		j convert
 		or $0, $0, $0			#Delay Slot(branch)
 
-sec:
+next:
 		add $t3, $0, $t2
 		sll $t2, $t2, 3			#muliply by 10
 		add $t2, $t2, $t3
@@ -134,8 +138,46 @@ sec:
 		or $0, $0, $0			#Delay Slot(branch)
 
 comma:
-		addi $t5, $0, 1			#element counter
-		lui 
+		beq $t5, $0, zero		#branch if first element
+		or $0, $0, $0			#Delay Slot(branch)
+
+		addi $s2, $s0, 100		#array spot 100
+		add $s2, $s2, $t5		#last position in integer_array
+		addi $t6, $s2, 1			#next spot in the integer_array
+loop:
+		sub $t7, $t2, $s2		#compare current element and last element
+		beq $t7, $0, equal		#branch if current = last element
+		or $0, $0, $0			#Delay Slot(branch)
+		bltz $t7, less			#branch if current < last element
+		or $0, $0, $0			#Delay Slot(branch)
+
+great:
+		sh $t2, ($t6)			#store integer in next spot in array
+		j checked
+		or $0, $0, $0			#Delay Slot(branch)
+
+equal:
+		add $t8, $t8, 1			#Duplicate Counter
+		j duplicate
+		or $0, $0, $0			#Delay Slot(branch)
+
+less:
+		sh $s2, ($t6)			#store the last element in the next spot
+		addi $t6, $t6, -1		#move next spot back one
+		addi $s2, $s2, -1		#move last spot back one
+		beq $s2, $t5, great		#branch if counter spot is reached
+		or $0, $0, $0			#Delay Slot(branch)
+
+		j loop
+		or $0, $0, $0			#Delay Slot(branch)
+
+zero:
+		sh $t2, 101($s0)		#store first elememt
+checked:
+		addi $t5, $t5, 1		#element counter
+		sh $t5, 100($s0)		#store element count in first integer_array spot
+
+duplicate:
 		beq $t1, 10, finCon		#branch to end
 		or $0, $0, $0			#Delay Slot(branch)
 
@@ -144,9 +186,27 @@ comma:
 		or $0, $0, $0			#Delay Slot(branch)
 
 finCon:
+		addi $s2, $s0, 100		#array spot 100
+
 		addi $v0, $0, 1			#print integer
-		add $a0, $0, $t2		
+		add $a0, $0, $t8		
 		syscall
+		j main					#Return to Main
+		or $0, $0, $0			#Delay Slot(branch)
+
+disArray:
+		addi $v0, $0, 4			#print prompt
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 567		#prompt location in the array
+		syscall
+		add $t5, $0, $s2		#number of elements in array
+print:
+		addi $v0, $0, 1			#print integer
+		add $a0, $0, $s2
+		syscall
+		addi $t5, $t5, -1		#decrement counter
+		bne $t5, 0, print		#branch to print
+
 		j main					#Return to Main
 		or $0, $0, $0			#Delay Slot(branch)
 
