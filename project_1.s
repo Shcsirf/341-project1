@@ -15,28 +15,31 @@ string_buffer:
 input_array:
 	.space 100
 		#start at spot 100, end at spot 199
-convert_array:
-	.space 100
-		#start at spot 200, end at spot 299
 string_prompt:
 	.asciiz "Enter a string of ASCII comma seperated signed integers\n"
-		#start at spot 300, end at spot 356
+		#start at spot 200, end at spot 256
 display_string_prompt:
 	.asciiz "Your string is\n"
-		#start at spot 357, end at spot 372
+		#start at spot 257, end at spot 272
 main_menu_prompt:
 	.asciiz "Enter:\n 1-Input String 2-Display String 3-Convert String\n"
-		#start at spot 373, end at spot 431
+		#start at spot 273, end at spot 331
 	.asciiz " 4-Mean 5-Median 6-Display Array\n 7-Exit Program\n"
-		#start at spot 431, end at spot 481
+		#start at spot 331, end at spot 381
 	.asciiz "Please enter a nunmber from the given menu\n"
-		#start at spot 481, end at spot 525
+		#start at spot 381, end at spot 425
 exit_prompt:
 	.asciiz "Program is now exiting, Have a Nice Day!\n"
-		#start at spot 525, end at spot 567
+		#start at spot 425, end at spot 467
 convert_prompt:
-	.asciiz "The following were removed as duplicates:\n"
-		#starts at 567, end at spot 608
+	.asciiz "The number of removed duplicates were:\n"
+		#starts at 467, end at spot 506
+display_array:
+	.asciiz "Displaying Array: \n"
+		#starts at 507, end at 526
+newline_char:
+	.asciiz "\n"
+		#starts at 527, end at 528
 .text
 
 main:
@@ -45,12 +48,12 @@ main:
 
 		addi $v0, $0, 4			#print main_menu_prompt
 		lui $a0, 0x1000			#load data array
-		addi $a0, $a0, 373		#prompt location in the array
+		addi $a0, $a0, 273		#prompt location in the array
 		syscall
 
 		addi $v0, $0, 4			#print main_menu_prompt
 		lui $a0, 0x1000			#load data array
-		addi $a0, $a0, 431		#prompt location in the array
+		addi $a0, $a0, 331		#prompt location in the array
 		syscall
 
 		addi $v0, $0, 5			#Read Integer
@@ -71,7 +74,7 @@ main:
 
 		addi $v0, $0, 4			#print main_menu_prompt
 		lui $a0, 0x1000			#load data array
-		addi $a0, $a0, 481		#prompt location in the array
+		addi $a0, $a0, 381		#prompt location in the array
 		syscall
 
 		j main					#Return to top of main
@@ -80,7 +83,7 @@ main:
 string:
 		addi $v0, $0, 4			#print prompt
 		lui $a0, 0x1000			#load data array
-		addi $a0, $a0, 300		#prompt location in the array
+		addi $a0, $a0, 200		#prompt location in the array
 		syscall
 
 		addi $v0, $0, 8			#read input_string
@@ -98,7 +101,7 @@ string:
 disString:
 		addi $v0, $0, 4			#print display_string_prompt
 		lui $a0, 0x1000			#load data array
-		addi $a0, $a0, 357		#prompt location in the array
+		addi $a0, $a0, 257		#prompt location in the array
 		syscall
 
 		addi $v0, $0, 4			#print input_string
@@ -142,6 +145,7 @@ next:
 		or $0, $0, $0			#Delay Slot(branch)
 
 comma:
+		add $t4, $0, $0			#clear counter
 		lui $s2, 0x1000
 		or $0, $0, $0			#Delay Slot(branch)
 
@@ -173,6 +177,7 @@ equal:
 		or $0, $0, $0			#Delay Slot(branch)
 
 less:
+		addi $t4, $t4, 1		#increment counter
 		lh $t9, ($s2)			#value in last spot
 		or $0, $0, $0			#Delay Slot(branch)
 		sh $t9, ($t6)			#store the last element in the next spot
@@ -188,15 +193,39 @@ less:
 
 zero:
 		sh $t2, ($t6)		#store first elememt
+		j checked
+		or $0, $0, $0			#Delay Slot(branch)
+
+dup_less:
+		addi $t6, $t6, 2		#increment next and last spot
+		addi $s2, $s2, 2
+		lh $t9, ($t6)			#value in next
+		or $0, $0, $0			#Delay Slot(branch)
+		sh $t9, ($s2)
+		or $0, $0, $0			#Delay Slot(branch)
+		addi $t4, $t4, -1		#decrement counter
+		beq $t4, $0, last_dup
+		or $0, $0, $0			#Delay Slot(branch)
+		j duplicate
+		or $0, $0, $0			#Delay Slot(branch)
+
+last_dup:
+		add $t9, $0, $0
+		sh $t9, ($t6)
+		or $0, $0, $0			#Delay Slot(branch)
+		j duplicate
+		or $0, $0, $0			#Delay Slot(branch)
+
 checked:
 		addi $t5, $t5, 1		#element counter
 		sh $t5, 100($s0)		#store element count in first integer_array spot
 
 duplicate:
+		bne $t4, 0, dup_less
 		beq $t1, 10, finCon		#branch to end
 		or $0, $0, $0			#Delay Slot(branch)
 
-		addi $t4, $t4, -1		#reduce counter
+		add $t4, $0, $0		#clear counter
 		addi $s1, $s1, 1		#moving array spot by 1
 		j convert
 		or $0, $0, $0			#Delay Slot(branch)
@@ -205,9 +234,21 @@ finCon:
 		lui $s2, 0x1000
 		addi $s2, $s2, 100		#array spot 100
 
-		addi $v0, $0, 1			#print integer
-		add $a0, $0, $t2		
+		addi $v0, $0, 4			#print prompt
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 467		#prompt location in the array
 		syscall
+
+		addi $v0, $0, 1			#print integer
+		add $a0, $0, $t8		
+		syscall
+
+		addi $v0, $0, 4			#print newline
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 527		#prompt location in the array
+		syscall
+
+
 		add $t1, $0, $0			#clear registers
 		add $t2, $0, $0			#clear registers
 		add $t3, $0, $0			#clear registers
@@ -218,13 +259,14 @@ finCon:
 		add $t7, $0, $0			#clear registers
 		add $t8, $0, $0			#clear registers
 		add $t9, $0, $0			#clear registers
+
 		j main					#Return to Main
 		or $0, $0, $0			#Delay Slot(branch)
 
 disArray:
 		addi $v0, $0, 4			#print prompt
 		lui $a0, 0x1000			#load data array
-		addi $a0, $a0, 567		#prompt location in the array
+		addi $a0, $a0, 507		#prompt location in the array
 		syscall
 		addi $t2, $s3, 1
 
@@ -234,6 +276,12 @@ print:
 		addi $v0, $0, 1			#print integer
 		add $a0, $0, $t1
 		syscall
+
+		addi $v0, $0, 4			#print newline
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 527		#prompt location in the array
+		syscall
+
 		addi $t2, $t2, -1		#decrement counter
 		addi $s2, $s2, 2		#increment spot in array
 		bne $t2, 0, print		#branch to print
@@ -245,7 +293,7 @@ print:
 exitProgram:
 		addi $v0, $0, 4			#print exit_prompt
 		lui $a0, 0x1000			#load data array
-		addi $a0, $a0, 525		#prompt location in the array
+		addi $a0, $a0, 425		#prompt location in the array
 		syscall
 
 		addi $v0, $0, 10		#Exit command
