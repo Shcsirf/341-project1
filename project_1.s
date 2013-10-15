@@ -338,11 +338,15 @@ can_array:
 		lui $a0, 0x1000			#load data array
 		addi $a0, $a0, 507		#prompt location in the array
 		syscall
+
 		addi $v0, $0, 4			#print prompt
 		lui $a0, 0x1000			#load data array
 		addi $a0, $a0, 529		#prompt location in the array
 		syscall
 
+		lui $s2 0x1000
+		or $0, $0, $0			#Delay Slot(load)
+		addi $s2, $s2, 100
 		addi $t2, $s3, 1
 
 print:
