@@ -53,7 +53,10 @@ mean_prompt:
 		#starts at 608, end at 622
 median_prompt:
 	.asciiz "Your median is:\n"
-		#starts at 623, end at 637
+		#starts at 623, end at 639
+already_convert:
+	.asciiz "You have already converted this string\n"
+		#starts at 640, end at 679
 .text
 
 main:
@@ -110,6 +113,7 @@ string:
 		add $s0, $0, $a0		#add input_string to s0
 		syscall
 		addi $s5, $0, 1			#string counter
+		add $s6, $0, $0			#clear convert counter
 		add $s1, $0, $s0		#copies s0 into s1 used in convert
 		add $t5, $0, $0			#initialize t5
 		add $t8, $0, $0			#initialize t8
@@ -143,6 +147,7 @@ string_exists:
 		or $0, $0, $0			#Delay Slot(branch)
 
 convert:
+		beq $s6, 1, cant_convert
 		beq $s5, 1, can_convert
 		or $0, $0, $0			#Delay Slot(branch)
 
@@ -154,8 +159,16 @@ convert:
 		j main
 		or $0, $0, $0
 
+cant_convert:
+		addi $v0, $0, 4			#print display_string_prompt
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 640		#prompt location in the array
+		syscall
+
+		j main
+		or $0, $0, $0
+
 can_convert:
-		add $s6, $0, 1			#convert counter
 		lb $t1, ($s1)			#Load s1
 		or $0, $0, $0			#Delay Slot(load)
 
@@ -317,6 +330,8 @@ finCon:
 		add $t7, $0, $0			#clear registers
 		add $t8, $0, $0			#clear registers
 		add $t9, $0, $0			#clear registers
+		add $s6, $0, 1			#convert counter
+
 
 		j main					#Return to Main
 		or $0, $0, $0			#Delay Slot(branch)
