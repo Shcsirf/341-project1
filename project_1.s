@@ -44,7 +44,16 @@ element_count:
 		#starts at 529, end at 549
 no_string:
 	.asciiz "Please enter a string first\n"
-		#starts at 549, end at 577
+		#starts at 550, end at 578
+no_convert:
+	.asciiz "Please convert string first\n"
+		#starts at 579, end at 607
+mean_prompt:
+	.asciiz "Your mean is:\n"
+		#starts at 608, end at 622
+median_prompt:
+	.asciiz "Your median is:\n"
+		#starts at 623, end at 637
 .text
 
 main:
@@ -71,6 +80,10 @@ main:
 		beq $t0, 2, disString	#branch to disString
 		or $0, $0, $0			#Delay Slot(branch)
 		beq $t0, 3, convert		#branch to convert
+		or $0, $0, $0			#Delay Slot(branch)
+		beq $t0, 4, mean		#branch to mean
+		or $0, $0, $0			#Delay Slot(branch)
+		beq $t0, 5, median		#branch to median
 		or $0, $0, $0			#Delay Slot(branch)
 		beq $t0, 6, disArray	#branch to disArray
 		or $0, $0, $0			#Delay Slot(branch)
@@ -142,6 +155,7 @@ convert:
 		or $0, $0, $0
 
 can_convert:
+		add $s6, $0, 1			#convert counter
 		lb $t1, ($s1)			#Load s1
 		or $0, $0, $0			#Delay Slot(load)
 
@@ -308,6 +322,18 @@ finCon:
 		or $0, $0, $0			#Delay Slot(branch)
 
 disArray:
+		beq $s6, 1, can_array
+		or $0, $0, $0			#Delay Slot(branch)
+
+		addi $v0, $0, 4			#print display_string_prompt
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 579		#prompt location in the array
+		syscall
+
+		j main
+		or $0, $0, $0
+
+can_array:
 		addi $v0, $0, 4			#print prompt
 		lui $a0, 0x1000			#load data array
 		addi $a0, $a0, 507		#prompt location in the array
@@ -340,7 +366,19 @@ print:
 		or $0, $0, $0			#Delay Slot(branch)
 
 mean:
-		add $t4, $0, $0			$clear register
+		beq $s6, 1, can_mean
+		or $0, $0, $0			#Delay Slot(branch)
+
+		addi $v0, $0, 4			#print display_string_prompt
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 579		#prompt location in the array
+		syscall
+
+		j main
+		or $0, $0, $0
+
+can_mean:
+		add $t4, $0, $0			#clear register
 		lui $t1, 0x1000			#load data
 		or $0, $0, $0			#Delay Slot(load)
 		addi $t1, $t1, 102		#point to convert_array
@@ -356,8 +394,84 @@ sum:
 		or $0, $0, $0			#Delay Slot(load)
 		lh $t2, 100($s0)		#number of converted elements
 		or $0, $0, $0			#Delay Slot(load)
-div:
-		
+		add $t1, $0, $0			#counter
+		bgez $t4, div_pos		#branch if sum is pos
+		or $0, $0, $0			#Delay Slot(branch)
+div_neg:
+		add $t4, $t4, $t2		#sum plus number of elements
+		addi $t1, $t1, -1		#increment counter
+		blez $t4, div_neg
+		or $0, $0, $0			#Delay Slot(branch)
+		addi $t1, $t1, 1		#increment counter
+		j final_mean
+		or $0, $0, $0			#Delay Slot(branch)
+div_pos:
+		sub $t4, $t4, $t2		#sum minus number of elements
+		addi $t1, $t1, 1		#increment counter
+		bgez $t4, div_pos		#branch if counter is not = 0
+		or $0, $0, $0			#Delay Slot(load)
+		addi $t1, $t1, -1		#decrement counter by 1
+final_mean:
+		addi $v0, $0, 4			#print prompt
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 608		#prompt location in the array
+		syscall
+
+		addi $v0, $0, 1			#print integer
+		add $a0, $0, $t1		
+		syscall
+
+		addi $v0, $0, 4			#print newline
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 527		#prompt location in the array
+		syscall
+
+		j main
+		or $0, $0, $0			#Delay Slot(branch)
+
+median:
+		beq $s6, 1, can_med
+		or $0, $0, $0			#Delay Slot(branch)
+
+		addi $v0, $0, 4			#print display_string_prompt
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 579		#prompt location in the array
+		syscall
+
+		j main
+		or $0, $0, $0
+
+can_med:
+		lui $t1, 0x1000			#load data
+		or $0, $0, $0			#Delay Slot(load)
+		addi $t1, $t1, 100		#point to convert_array
+		lh $t2, 100($s0)		#number of converted elements
+		or $0, $0, $0			#Delay Slot(load)
+		andi $t3, $t2, 1		#even or odd
+		beq $t3, 0, even
+		or $0, $0, $0			#Delay Slot(branch)
+		addi $t2, $t2, 1		#increment elements by 1 byte
+even:
+		add $t1, $t1, $t2
+		lh $t4, ($t1)
+		or $0, $0, $0			#Delay Slot(load)
+
+		addi $v0, $0, 4			#print prompt
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 623		#prompt location in the array
+		syscall
+
+		addi $v0, $0, 1			#print integer
+		add $a0, $0, $t4		
+		syscall
+
+		addi $v0, $0, 4			#print newline
+		lui $a0, 0x1000			#load data array
+		addi $a0, $a0, 527		#prompt location in the array
+		syscall
+
+		j main
+		or $0, $0, $0			#Delay Slot(branch)
 
 exitProgram:
 		addi $v0, $0, 4			#print exit_prompt
